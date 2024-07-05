@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\Contact;
+use App\Models\User;
+use Database\Seeders\ContactSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -69,6 +72,63 @@ class ContactTest extends TestCase
                     'first_name' => [
                         'The first name field is required.'
                     ],
+                ]
+            ]);
+    }
+
+    public function testGetSuccess()
+    {
+        $this->seed([UserSeeder::class, ContactSeeder::class]);
+        $user = User::where('username', 'test')->first();
+        $contact = Contact::where('user_id', $user->id)->first();
+
+        $this->withHeaders(['Authorization' => $user->token])
+            ->get("/api/contacts/$contact->id")
+            ->assertStatus(200)
+            ->assertJson([
+                'data' => [
+                    'id' => $contact->id,
+                    'first_name' => $contact->first_name,
+                    'last_name' => $contact->last_name,
+                    'email' => $contact->email,
+                    'phone' => $contact->phone,
+                ]
+            ]);
+    }
+
+    public function testGetNotFound()
+    {
+        $this->seed([UserSeeder::class, ContactSeeder::class]);
+        $user = User::where('username', 'test')->first();
+        $contact = Contact::where('user_id', $user->id)->first();
+
+        $this->withHeaders(['Authorization' => $user->token])
+            ->get("/api/contacts/" . ($contact->id + 1))
+            ->assertStatus(404)
+            ->assertJson([
+                'errors' => [
+                    'message' => [
+                        'not found'
+                    ]
+                ]
+            ]);
+    }
+
+    public function testGetDifferentUser()
+    {
+        $this->seed([UserSeeder::class, ContactSeeder::class]);
+        $user1 = User::where('username', 'test')->first();
+        $user2 = User::where('username', 'test2')->first();
+        $contact = Contact::where('user_id', $user1->id)->first();
+
+        $this->withHeaders(['Authorization' => $user2->token])
+            ->get("/api/contacts/$contact->id")
+            ->assertStatus(404)
+            ->assertJson([
+                'errors' => [
+                    'message' => [
+                        'not found'
+                    ]
                 ]
             ]);
     }

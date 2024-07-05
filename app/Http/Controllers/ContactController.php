@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ContactRequest;
 use App\Http\Resources\ContactResource;
 use App\Models\Contact;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,5 +23,24 @@ class ContactController extends Controller
 
         $result = new ContactResource($contact);
         return $result->response()->setStatusCode(201);
+    }
+
+    public function get(int $id): ContactResource
+    {
+        $user = Auth::user();
+
+        $contact = Contact::where('id', $id)->where('user_id', $user->id)->first();
+        if (!$contact) {
+            $responseJson = response()->json([
+                'errors' => [
+                    'message' => [
+                        'not found'
+                    ]
+                ]
+            ])->setStatusCode(404);
+            throw new HttpResponseException($responseJson);
+        }
+
+        return new ContactResource($contact);
     }
 }
