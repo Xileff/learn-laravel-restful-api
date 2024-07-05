@@ -31,7 +31,7 @@ class ApiAuthMiddleware
             $authenticated = false;
         }
 
-        // If token is real -> attach data user ke request, mirip kyk di req.user di Express
+        // If unauthenticated, error 401
         if (!$authenticated) {
             return response()->json([
                 'errors' => [
@@ -42,6 +42,7 @@ class ApiAuthMiddleware
             ])->setStatusCode(401);
         }
 
+        // If token is real -> attach data user ke request, mirip kyk di req.user di Express
         Auth::login($user);
         return $next($request);
     }

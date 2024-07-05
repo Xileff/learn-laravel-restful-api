@@ -6,6 +6,7 @@ use App\Models\User;
 use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class UserTest extends TestCase
@@ -165,5 +166,78 @@ class UserTest extends TestCase
                     ]
                 ]
             ]);
+    }
+
+    public function testUpdatePassword()
+    {
+        $this->seed([UserSeeder::class]);
+        $oldUser = User::where('username', 'test')->first();
+
+        $this->withHeaders([
+            'Authorization' => 'test'
+        ])
+            ->patch('/api/users/current', [
+                'password' => 'updated'
+            ])
+            ->assertStatus(200)
+            ->assertJson([
+                'data' => [
+                    'id' => $oldUser->id,
+                    'username' => 'test',
+                    'name' => 'test'
+                ]
+            ]);
+
+        $newUser = User::where('username', 'test')->first();
+        $this->assertNotEquals($newUser->password, $oldUser->password);
+    }
+
+    public function testUpdateName()
+    {
+        $this->seed([UserSeeder::class]);
+        $oldUser = User::where('username', 'test')->first();
+
+        $this->withHeaders([
+            'Authorization' => 'test'
+        ])
+            ->patch('/api/users/current', [
+                'name' => 'updated'
+            ])
+            ->assertStatus(200)
+            ->assertJson([
+                'data' => [
+                    'id' => $oldUser->id,
+                    'username' => 'test',
+                    'name' => 'updated'
+                ]
+            ]);
+
+        $newUser = User::where('username', 'test')->first();
+        $this->assertNotEquals($newUser->name, $oldUser->name);
+    }
+
+    public function testUpdateFailed()
+    {
+        $this->seed([UserSeeder::class]);
+        $oldUser = User::where('username', 'test')->first();
+
+        $this->withHeaders([
+            'Authorization' => 'test'
+        ])
+            ->patch('/api/users/current', [
+                'name' => 'updatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdated'
+            ])
+            ->assertStatus(400)
+            ->assertJson([
+                'errors' => [
+                    'name' => [
+                        'The name field must not be greater than 100 characters.'
+                    ]
+
+                ]
+            ]);
+
+        $newUser = User::where('username', 'test')->first();
+        $this->assertEquals($newUser->name, $oldUser->name);
     }
 }

@@ -6,14 +6,14 @@ use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class UserLoginRequest extends FormRequest
+class UserUpdateRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return true; // true jadi gaperlu ter-login utk akses
+        return $this->user() != null; // dari middleware (req.user)
     }
 
     /**
@@ -24,8 +24,8 @@ class UserLoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'username' => ['required', 'max:100'],
-            'password' => ['required', 'max:100']
+            'name' => ['nullable', 'max:100'],
+            'password' => ['nullable', 'max:100'],
         ];
     }
 

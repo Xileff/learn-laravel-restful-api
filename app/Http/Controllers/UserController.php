@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UserLoginRequest;
 use App\Http\Requests\UserRegisterRequest;
+use App\Http\Requests\UserUpdateRequest;
+use App\Http\Resources\UpdateUserResource;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -64,5 +66,23 @@ class UserController extends Controller
     {
         $user = Auth::user(); // kayak dapetin req.user
         return new UserResource($user);
+    }
+
+    public function update(UserUpdateRequest $request): UpdateUserResource
+    {
+        $data = $request->validated();
+        $user = Auth::user(); // req.user dlm bentuk model User, dari AuthApiMiddleware
+
+        if (isset($data['name'])) {
+            $user->name = $data['name'];
+        }
+
+        if (isset($data['password'])) {
+            $user->password = Hash::make($data['password']);
+        }
+
+        $user->save(); // error aneh, ignore aja
+
+        return new UpdateUserResource($user);
     }
 }
