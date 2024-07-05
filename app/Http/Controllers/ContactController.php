@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ContactRequest;
+use App\Http\Resources\ContactCollection;
 use App\Http\Resources\ContactResource;
 use App\Models\Contact;
 use App\Models\User;
 use GuzzleHttp\Psr7\Response;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -57,6 +59,44 @@ class ContactController extends Controller
         return response()->json([
             'data' => true,
         ]);
+    }
+
+    public function search(Request $request): ContactCollection
+    {
+        $user = Auth::user();
+        $page = $request->input('page', 1);
+        $size = $request->input('size', 10);
+
+        // SELECT * FROM contacts WHERE user_id = ?
+        $contacts = Contact::where('user_id', $user->id);
+
+        $contacts = $contacts->where(function (Builder $builder) use ($request) {
+            $name = $request->input('name');
+
+            // AND (WHERE first_name LIKE $name OR WHERE last_name LIKE $name)
+            if ($name) {
+                $builder->where(function (Builder $builder) use ($name) {
+                    $builder->orWhere('first_name', 'LIKE', "%$name%");
+                    $builder->orWhere('last_name', 'LIKE', "%$name%");
+                });
+            }
+
+            // AND WHERE email LIKE $email
+            $email = $request->input('email');
+            if ($email) {
+                $builder->where('email', 'LIKE', "%$email%");
+            }
+
+            // AND WHERE phone LIKE $phone
+            $phone = $request->input('phone');
+            if ($phone) {
+                $builder->where('phone', 'LIKE', "%$phone%");
+            }
+        });
+
+        $contacts = $contacts->paginate(perPage: $size, page: $page);
+
+        return new ContactCollection($contacts);
     }
 
     public function queryContact(int $id, User $user): Contact
