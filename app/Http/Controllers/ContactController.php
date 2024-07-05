@@ -6,6 +6,7 @@ use App\Http\Requests\ContactRequest;
 use App\Http\Resources\ContactResource;
 use App\Models\Contact;
 use App\Models\User;
+use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -44,6 +45,18 @@ class ContactController extends Controller
         $contact->save();
 
         return new ContactResource($contact);
+    }
+
+    public function delete(int $id): JsonResponse
+    {
+        $user = Auth::user();
+        $contact = $this->queryContact($id, $user);
+
+        $contact->delete();
+
+        return response()->json([
+            'data' => true,
+        ]);
     }
 
     public function queryContact(int $id, User $user): Contact

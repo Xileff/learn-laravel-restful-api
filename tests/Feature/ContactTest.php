@@ -207,4 +207,39 @@ class ContactTest extends TestCase
                 ]
             ]);
     }
+
+    public function testDeleteSuccess()
+    {
+        $this->seed([UserSeeder::class, ContactSeeder::class]);
+
+        $user = User::where('username', 'test')->first();
+        $contact = Contact::where('user_id', $user->id)->first();
+
+        $this->withHeaders(['Authorization' => $user->token])
+            ->delete("/api/contacts/$contact->id")
+            ->assertStatus(200)
+            ->assertJson([
+                'data' => true
+            ]);
+    }
+
+    public function testDeleteDifferentUser()
+    {
+        $this->seed([UserSeeder::class, ContactSeeder::class]);
+
+        $user1 = User::where('username', 'test')->first();
+        $user2 = User::where('username', 'test2')->first();
+        $contactUser1 = Contact::where('user_id', $user1->id)->first();
+
+        $this->withHeaders(['Authorization' => $user2->token])
+            ->delete("/api/contacts/$contactUser1->id")
+            ->assertStatus(404)
+            ->assertJson([
+                'errors' => [
+                    'message' => [
+                        'not found'
+                    ]
+                ]
+            ]);
+    }
 }
