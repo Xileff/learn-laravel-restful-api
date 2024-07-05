@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ContactRequest;
 use App\Http\Resources\ContactResource;
 use App\Models\Contact;
+use App\Models\User;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,7 +29,25 @@ class ContactController extends Controller
     public function get(int $id): ContactResource
     {
         $user = Auth::user();
+        $contact = $this->queryContact($id, $user);
 
+        return new ContactResource($contact);
+    }
+
+    public function update(int $id, ContactRequest $request): ContactResource
+    {
+        $user = Auth::user();
+        $contact = $this->queryContact($id, $user);
+
+        $data = $request->validated();
+        $contact->fill($data);
+        $contact->save();
+
+        return new ContactResource($contact);
+    }
+
+    public function queryContact(int $id, User $user): Contact
+    {
         $contact = Contact::where('id', $id)->where('user_id', $user->id)->first();
         if (!$contact) {
             $responseJson = response()->json([
@@ -41,6 +60,6 @@ class ContactController extends Controller
             throw new HttpResponseException($responseJson);
         }
 
-        return new ContactResource($contact);
+        return $contact;
     }
 }

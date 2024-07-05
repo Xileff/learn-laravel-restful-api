@@ -66,11 +66,11 @@ class ContactTest extends TestCase
                 'email' => '',
                 'phone' => '',
             ])
-            ->assertStatus(400)
+            ->assertStatus(401)
             ->assertJson([
                 'errors' => [
-                    'first_name' => [
-                        'The first name field is required.'
+                    'message' => [
+                        'unauthorized'
                     ],
                 ]
             ]);
@@ -123,6 +123,81 @@ class ContactTest extends TestCase
 
         $this->withHeaders(['Authorization' => $user2->token])
             ->get("/api/contacts/$contact->id")
+            ->assertStatus(404)
+            ->assertJson([
+                'errors' => [
+                    'message' => [
+                        'not found'
+                    ]
+                ]
+            ]);
+    }
+
+    public function testUpdateSuccess()
+    {
+        $this->seed([UserSeeder::class, ContactSeeder::class]);
+
+        $user = User::where('username', 'test')->first();
+        $contact = Contact::where('user_id', $user->id)->first();
+
+        $this->withHeaders(['Authorization' => $user->token])
+            ->put("/api/contacts/$contact->id", [
+                'first_name' => 'updated',
+                'last_name' => 'updated',
+                'email' => 'updated@example.com',
+                'phone' => '123456789',
+            ])
+            ->assertStatus(200)
+            ->assertJson([
+                'data' => [
+                    'id' => $contact->id,
+                    'first_name' => 'updated',
+                    'last_name' => 'updated',
+                    'email' => 'updated@example.com',
+                    'phone' => '123456789',
+                ]
+            ]);
+    }
+
+    public function testUpdateValidationError()
+    {
+        $this->seed([UserSeeder::class, ContactSeeder::class]);
+
+        $user = User::where('username', 'test')->first();
+        $contact = Contact::where('user_id', $user->id)->first();
+
+        $this->withHeaders(['Authorization' => $user->token])
+            ->put("/api/contacts/$contact->id", [
+                'first_name' => '',
+                'last_name' => '',
+                'email' => '',
+                'phone' => '',
+            ])
+            ->assertStatus(400)
+            ->assertJson([
+                'errors' => [
+                    'first_name' => [
+                        'The first name field is required.'
+                    ]
+                ]
+            ]);
+    }
+
+    public function testUpdateDifferentUser()
+    {
+        $this->seed([UserSeeder::class, ContactSeeder::class]);
+
+        $user1 = User::where('username', 'test')->first();
+        $user2 = User::where('username', 'test2')->first();
+        $contactUser1 = Contact::where('user_id', $user1->id)->first();
+
+        $this->withHeaders(['Authorization' => $user2->token])
+            ->put("/api/contacts/$contactUser1->id", [
+                'first_name' => 'updated',
+                'last_name' => 'updated',
+                'email' => 'updated@example.com',
+                'phone' => '123456789',
+            ])
             ->assertStatus(404)
             ->assertJson([
                 'errors' => [
