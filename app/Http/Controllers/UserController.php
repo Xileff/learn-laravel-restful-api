@@ -14,7 +14,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class UserController extends Controller
@@ -84,5 +83,15 @@ class UserController extends Controller
         $user->save(); // error aneh, ignore aja
 
         return new UpdateUserResource($user);
+    }
+
+    public function logout(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+        $user->token = null;
+        $user->save();
+        return response()->json([
+            'data' => true
+        ]);
     }
 }

@@ -156,7 +156,7 @@ class UserTest extends TestCase
         $this->seed([UserSeeder::class]);
 
         $this
-            ->withHeaders(['Authorization', 'salah'])
+            ->withHeaders(['Authorization' => 'salah'])
             ->get('/api/users/current')
             ->assertStatus(401)
             ->assertJson([
@@ -197,9 +197,7 @@ class UserTest extends TestCase
         $this->seed([UserSeeder::class]);
         $oldUser = User::where('username', 'test')->first();
 
-        $this->withHeaders([
-            'Authorization' => 'test'
-        ])
+        $this->withHeaders(['Authorization' => 'test'])
             ->patch('/api/users/current', [
                 'name' => 'updated'
             ])
@@ -221,16 +219,14 @@ class UserTest extends TestCase
         $this->seed([UserSeeder::class]);
         $oldUser = User::where('username', 'test')->first();
 
-        $this->withHeaders([
-            'Authorization' => 'test'
-        ])
+        $this->withHeaders(['Authorization' => 'test'])
             ->patch('/api/users/current', [
                 'name' => 'updatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdatedupdated'
             ])
             ->assertStatus(400)
             ->assertJson([
                 'errors' => [
-                    'name' => [
+                    'name' => [ // dari dto UserUpdateRequest
                         'The name field must not be greater than 100 characters.'
                     ]
 
@@ -239,5 +235,40 @@ class UserTest extends TestCase
 
         $newUser = User::where('username', 'test')->first();
         $this->assertEquals($newUser->name, $oldUser->name);
+    }
+
+    public function testLogoutSuccess()
+    {
+        $this->seed([UserSeeder::class]);
+
+        $this->withHeaders(['Authorization' => 'test'])
+            ->delete('/api/users/logout')
+            ->assertStatus(200)
+            ->assertJson([
+                'data' => true
+            ]);
+
+        $user = User::where('username', 'test')->first();
+        $this->assertNull($user->token);
+
+        $this->withHeaders(['Authorization', 'test'])
+            ->get('/api/users/current')
+            ->assertStatus(401);
+    }
+
+    public function testLogoutFailed()
+    {
+        $this->seed([UserSeeder::class]);
+
+        $this->withHeaders(['Authorization' => 'salah'])
+            ->delete('/api/users/logout')
+            ->assertStatus(401)
+            ->assertJson([
+                'errors' => [ // dari middleware
+                    'message' => [
+                        'unauthorized'
+                    ]
+                ]
+            ]);
     }
 }
