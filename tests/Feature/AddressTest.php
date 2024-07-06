@@ -240,4 +240,71 @@ class AddressTest extends TestCase
                 ]
             ]);
     }
+
+    public function testDeleteSuccess()
+    {
+        $this->seed([UserSeeder::class, ContactSeeder::class, AddressSeeder::class]);
+
+        $user = User::firstWhere('username', 'test');
+        $contact = Contact::firstWhere('user_id', $user->id);
+        $address = Address::firstWhere('contact_id', $contact->id);
+
+        $this->withHeaders(['Authorization' => $user->token])
+            ->delete("/api/contacts/$contact->id/addresses/$address->id")
+            ->assertStatus(200)
+            ->assertJson([
+                'data' => true
+            ]);
+
+        $address = Address::firstWhere('id', $address->id);
+        $this->assertNull($address);
+    }
+
+    public function testDeleteNotFound()
+    {
+        $this->seed([UserSeeder::class, ContactSeeder::class, AddressSeeder::class]);
+
+        $user = User::firstWhere('username', 'test');
+        $contact = Contact::firstWhere('user_id', $user->id);
+        $address = Address::firstWhere('contact_id', $contact->id);
+
+        $this->withHeaders(['Authorization' => $user->token])
+            ->delete("/api/contacts/$contact->id/addresses/" . ($address->id + 1))
+            ->assertStatus(404)
+            ->assertJson([
+                'errors' => [
+                    'message' => [
+                        'not found'
+                    ]
+                ]
+            ]);
+
+        $address = Address::firstWhere('id', $address->id);
+        $this->assertNotNull($address);
+    }
+
+    public function testDeleteDifferentUser()
+    {
+        $this->seed([UserSeeder::class, ContactSeeder::class, AddressSeeder::class]);
+
+        $user = User::firstWhere('username', 'test');
+        $contact = Contact::firstWhere('user_id', $user->id);
+        $address = Address::firstWhere('contact_id', $contact->id);
+
+        $user2 = User::firstWhere('username', 'test2');
+
+        $this->withHeaders(['Authorization' => $user2->token])
+            ->delete("/api/contacts/$contact->id/addresses/" . ($address->id + 1))
+            ->assertStatus(404)
+            ->assertJson([
+                'errors' => [
+                    'message' => [
+                        'not found'
+                    ]
+                ]
+            ]);
+
+        $address = Address::firstWhere('id', $address->id);
+        $this->assertNotNull($address);
+    }
 }

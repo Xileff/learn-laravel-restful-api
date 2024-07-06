@@ -55,6 +55,19 @@ class AddressController extends Controller
         return new AddressResource($address);
     }
 
+    public function delete(string $contactId, string $addressId): JsonResponse
+    {
+        $user = Auth::user();
+        $contact = $this->queryContact($contactId, $user);
+        $address = $this->queryAddress($addressId, $contact->id);
+
+        $address->delete();
+
+        return response()->json([
+            'data' => true
+        ]);
+    }
+
     public function queryContact(int $id, User $user): Contact
     {
         $contact = Contact::where('id', $id)->where('user_id', $user->id)->first();
