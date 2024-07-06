@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\AddressRequest;
+use App\Http\Resources\AddressCollection;
 use App\Http\Resources\AddressResource;
 use App\Models\Address;
 use App\Models\Contact;
@@ -66,6 +67,15 @@ class AddressController extends Controller
         return response()->json([
             'data' => true
         ]);
+    }
+
+    public function list(string $contactId): AddressCollection
+    {
+        $user = Auth::user();
+        $contact = $this->queryContact($contactId, $user);
+
+        $addresses = Address::where('contact_id', $contact->id)->get();
+        return new AddressCollection($addresses);
     }
 
     public function queryContact(int $id, User $user): Contact

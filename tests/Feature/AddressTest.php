@@ -7,6 +7,7 @@ use App\Models\Contact;
 use App\Models\User;
 use Database\Seeders\AddressSeeder;
 use Database\Seeders\ContactSeeder;
+use Database\Seeders\ListAddressSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -306,5 +307,41 @@ class AddressTest extends TestCase
 
         $address = Address::firstWhere('id', $address->id);
         $this->assertNotNull($address);
+    }
+
+    public function testListSuccess()
+    {
+        $this->seed([UserSeeder::class, ContactSeeder::class, ListAddressSeeder::class]);
+
+        $user = User::firstWhere('username', 'test');
+        $contact = Contact::firstWhere('user_id', $user->id);
+
+        $response = $this->withHeaders(['Authorization' => $user->token])
+            ->get("/api/contacts/$contact->id/addresses")
+            ->assertStatus(200)
+            ->json();
+
+        $this->assertCount(10, $response['data']);
+    }
+
+    public function testListDifferentUser()
+    {
+        $this->seed([UserSeeder::class, ContactSeeder::class, ListAddressSeeder::class]);
+
+        $user = User::firstWhere('username', 'test');
+        $contact = Contact::firstWhere('user_id', $user->id);
+
+        $user2 = User::firstWhere('username', 'test2');
+
+        $this->withHeaders(['Authorization' => $user2->token])
+            ->get("/api/contacts/$contact->id/addresses")
+            ->assertStatus(404)
+            ->assertJson([
+                'errors' => [
+                    'message' => [
+                        'not found'
+                    ]
+                ]
+            ]);
     }
 }

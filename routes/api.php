@@ -36,6 +36,7 @@ Route::middleware(ApiAuthMiddleware::class)->group(function () {
 
   // Address
   Route::post('/contacts/{contactId}/addresses', [AddressController::class, 'create'])->where('contactId', '[0-9]+');
+  Route::get('/contacts/{contactId}/addresses', [AddressController::class, 'list'])->where('contactId', '[0-9]+');
   Route::prefix('/contacts/{contactId}/addresses/{addressId}')
     ->where([
       'contactId' => '[0-9]+',
