@@ -42,6 +42,19 @@ class AddressController extends Controller
         return new AddressResource($address);
     }
 
+    public function update(string $contactId, string $addressId, AddressRequest $request): AddressResource
+    {
+        $user = Auth::user();
+        $contact = $this->queryContact($contactId, $user);
+        $address = $this->queryAddress($addressId, $contact->id);
+
+        $data = $request->validated();
+        $address->fill($data);
+        $address->save();
+
+        return new AddressResource($address);
+    }
+
     public function queryContact(int $id, User $user): Contact
     {
         $contact = Contact::where('id', $id)->where('user_id', $user->id)->first();

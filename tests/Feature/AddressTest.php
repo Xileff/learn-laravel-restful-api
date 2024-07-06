@@ -156,4 +156,88 @@ class AddressTest extends TestCase
                 ]
             ]);
     }
+
+    public function testUpdateSuccess()
+    {
+        $this->seed([UserSeeder::class, ContactSeeder::class, AddressSeeder::class]);
+
+        $user = User::firstWhere('username', 'test');
+        $contact = Contact::firstWhere('user_id', $user->id);
+        $address = Address::firstWhere('contact_id', $contact->id);
+
+        $this->withHeaders(['Authorization' => $user->token])
+            ->put("/api/contacts/$contact->id/addresses/$address->id", [
+                'street' => 'street updated',
+                'city' => 'city updated',
+                'province' => 'province updated',
+                'country' => 'country updated',
+                'postal_code' => '112233'
+            ])
+            ->assertStatus(200)
+            ->assertJson([
+                'data' => [
+                    'street' => 'street updated',
+                    'city' => 'city updated',
+                    'province' => 'province updated',
+                    'country' => 'country updated',
+                    'postal_code' => '112233'
+                ]
+            ]);
+    }
+
+    public function testUpdateFailed()
+    {
+        $this->seed([UserSeeder::class, ContactSeeder::class, AddressSeeder::class]);
+
+        $user = User::firstWhere('username', 'test');
+        $contact = Contact::firstWhere('user_id', $user->id);
+        $address = Address::firstWhere('contact_id', $contact->id);
+
+        $payload = [
+            'street' => '',
+            'city' => '',
+            'province' => '',
+            'country' => '',
+            'postal_code' => ''
+        ];
+
+        $this->withHeaders(['Authorization' => $user->token])
+            ->put("/api/contacts/$contact->id/addresses/$address->id", $payload)
+            ->assertStatus(400)
+            ->assertJson([
+                'errors' => [
+                    'country' => [
+                        'The country field is required.'
+                    ]
+                ]
+            ]);
+    }
+
+    public function testUpdateDifferentUser()
+    {
+        $this->seed([UserSeeder::class, ContactSeeder::class, AddressSeeder::class]);
+
+        $user1 = User::firstWhere('username', 'test');
+        $contactUser1 = Contact::firstWhere('user_id', $user1->id);
+        $addressUser1 = Address::firstWhere('contact_id', $contactUser1->id);
+
+        $user2 = User::firstWhere('username', 'test2');
+
+        $this->withHeaders(['Authorization' => $user2->token])
+            ->put("/api/contacts/$contactUser1->id/addresses/$addressUser1->id", [
+                'street' => 'street updated',
+                'city' => 'city updated',
+                'province' => 'province updated',
+                'country' => 'country updated',
+                'postal_code' => '112233'
+            ])
+            ->assertStatus(404)
+            ->assertJson([
+                'errors' => [
+                    'message' => [
+                        'not found'
+                    ]
+                ]
+            ]);
+    }
 }
