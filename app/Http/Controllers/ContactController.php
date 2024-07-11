@@ -99,7 +99,7 @@ class ContactController extends Controller
         return new ContactCollection($contacts);
     }
 
-    public function queryContact(int $id, User $user): Contact
+    private function queryContact(int $id, User $user): Contact
     {
         $contact = Contact::where('id', $id)->where('user_id', $user->id)->first();
         if (!$contact) {
